@@ -1,0 +1,83 @@
+version: '3.9'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: pie01_nginx
+    hostname: ghost-nginx
+    ports:
+      - ${NGINX_PORT:-443}:443
+    restart: always
+    depends_on:
+      - ghost
+    volumes:
+      - nginx-certs:/etc/nginx/certs:ro
+      - $PWD/nginx/nginx.conf:/etc/nginx/nginx.conf:z
+      - $PWD/nginx/conf/ghost.conf:/etc/nginx/conf.d/ghost.conf:z
+    networks:
+      - main-network
+
+  ghost:
+    image: ghost:latest
+    container_name: pie01_ghost
+    hostname: ghost
+    restart: always
+    depends_on:
+      - ghost-db
+    environment:
+      - NODE_ENV=production
+      - database__client=mysql
+      - database__connection__host=ghost-db
+      - database__connection__user=root
+      - database__connection__password=${DB_PASSWORD}
+      - database__connection__database=ghost
+      - database__connection__charset=utf8mb4
+    #ports:
+    #  - "2368:2368"
+    volumes:
+      - $PWD/ghost/config.production.json:/var/lib/ghost/config.production.json
+      - ghost-content:/var/lib/ghost/content:z
+    networks:
+      - main-network
+
+  ghost-db:
+    image: mysql:latest
+    container_name: pie01_mysql
+    hostname: ghost-db
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=ghost
+    volumes:
+      - ghost-mysql:/var/lib/mysql
+    networks:
+      - main-network
+
+volumes:
+  ghost-mysql:
+    name: pie01_db
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_VOLUMES}/pie01.com/mysql
+
+  nginx-certs:
+    name: pie01_certs
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_VOLUMES}/pie01.com/certs
+
+  ghost-content:
+    name: pie01_content
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_VOLUMES}/pie01.com/content
+
+networks:
+  main-network:
+    name: pie01_network

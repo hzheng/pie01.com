@@ -1,0 +1,30 @@
+{
+    "url": "http://localhost:2368",
+    "server": {
+        "port": 2368,
+        "host": "0.0.0.0"
+    },
+    "mail": {
+        "from": "'Custom Name' <myemail@pie.com>", 
+        "transport": "SMTP",
+        "logger": true,
+        "options": {
+            "host": "",
+            "secureConnection": false,
+            "auth": {
+                "user": "",
+                "pass": ""
+            }
+        }
+    },
+    "logging": {
+        "transports": [
+            "file",
+            "stdout"
+        ]
+    },
+    "process": "systemd",
+    "paths": {
+        "contentPath": "/var/lib/ghost/content"
+    }
+}
