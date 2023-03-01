@@ -18,7 +18,9 @@ services:
       - main-network
 
   ghost:
-    image: ghost:latest
+    build:
+      context: ghost
+    image: ghost:custom
     container_name: pie01_ghost
     hostname: ghost
     restart: always
@@ -32,6 +34,8 @@ services:
       - database__connection__password=${DB_PASSWORD}
       - database__connection__database=ghost
       - database__connection__charset=utf8mb4
+      - mail__options__host=postfix
+      - mail__options__port=25
     #ports:
     #  - "2368:2368"
     volumes:
@@ -39,6 +43,7 @@ services:
       - ghost-content:/var/lib/ghost/content:z
     networks:
       - main-network
+      - postfix-network
 
   ghost-db:
     image: mysql:latest
@@ -52,6 +57,52 @@ services:
       - ghost-mysql:/var/lib/mysql
     networks:
       - main-network
+  
+  postfix:
+    build:
+      context: postfix
+    image: postfix:custom
+    container_name: pie01_postfix
+    hostname: postfix
+    restart: always
+    networks:
+      - postfix-network
+      - rsyslog-network
+    env_file:
+      - .env
+    environment:
+      - SMTP_USERNAME=$SMTP_USERNAME
+      - SMTP_PASSWORD=$SMTP_PASSWORD
+      - TZ=${TIME_ZONE}
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://${RSYSLOG_SUBNET_PREFIX}.1:${RSYSLOG_PORT}"
+        syslog-format: "${RSYSLOG_FORMAT}"
+        tag: "{{.Name}}/{{.ID}}"
+    ports:
+       - "${POSTFIX_PORT}:25"
+    cap_add:
+      - SYSLOG
+  
+  syslogd: 
+    build:
+      context: rsyslog
+    image: rsyslog:custom
+    container_name: pie01_rsyslog 
+    hostname: rsyslog 
+    restart: always
+    volumes: 
+      - rsyslog_home:/var/log
+    networks:
+      - rsyslog-network
+    ports: 
+      - ${RSYSLOG_PORT}:514
+      - ${RSYSLOG_PORT}:514/udp
+    cap_add:
+      - SYSLOG
+    environment:
+      - TZ=${TIME_ZONE}
 
 volumes:
   ghost-mysql:
@@ -78,6 +129,36 @@ volumes:
       o: bind
       device: ${DOCKER_VOLUMES}/pie01.com/content
 
+  rsyslog_home:
+    name: rsyslog_home
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_VOLUMES}/pie01.com/rsyslog
+
 networks:
   main-network:
-    name: pie01_network
+    name: pie01_web_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${WEB_SUBNET_PREFIX}.0/24
+          gateway: ${WEB_SUBNET_PREFIX}.1
+  postfix-network:
+    name: pie01_postfix_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${POSTFIX_SUBNET_PREFIX}.0/24
+          gateway: ${POSTFIX_SUBNET_PREFIX}.1
+  rsyslog-network:
+    name: pie01_rsyslog_network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: ${RSYSLOG_SUBNET_PREFIX}.0/24
+          gateway: ${RSYSLOG_SUBNET_PREFIX}.1

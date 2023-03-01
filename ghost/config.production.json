@@ -5,15 +5,14 @@
         "host": "0.0.0.0"
     },
     "mail": {
-        "from": "'Custom Name' <myemail@pie.com>", 
+        "from": "'Pie01 admininstrator' <admin@pie01.com>", 
         "transport": "SMTP",
         "logger": true,
+        "openssl_verify_mode": "none",
         "options": {
-            "host": "",
             "secureConnection": false,
-            "auth": {
-                "user": "",
-                "pass": ""
+            "tls": {
+                "rejectUnauthorized": false
             }
         }
     },
