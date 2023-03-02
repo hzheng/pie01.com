@@ -1,0 +1,3 @@
+[submodule "ghost/content/themes/ease"]
+	path = ghost/content/themes/ease
+	url = git@github.com:hzheng/Ease.git
