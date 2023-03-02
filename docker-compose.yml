@@ -111,7 +111,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${DOCKER_VOLUMES}/pie01.com/mysql
+      device: ${DOCKER_ROOT}/mysql
 
   nginx-certs:
     name: pie01_certs
@@ -119,7 +119,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${DOCKER_VOLUMES}/pie01.com/certs
+      device: ${DOCKER_ROOT}/certs
 
   ghost-content:
     name: pie01_content
@@ -127,7 +127,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${DOCKER_VOLUMES}/pie01.com/content
+      device: ${DOCKER_ROOT}/content
 
   rsyslog_home:
     name: rsyslog_home
@@ -135,7 +135,7 @@ volumes:
     driver_opts:
       type: none
       o: bind
-      device: ${DOCKER_VOLUMES}/pie01.com/rsyslog
+      device: ${DOCKER_ROOT}/rsyslog
 
 networks:
   main-network:

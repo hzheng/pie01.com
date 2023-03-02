@@ -27,6 +27,16 @@ usage() {
     bail "${1}$HELP_MSG" $status
 }
 
+function check_env_variables {
+  for var in "$@"
+  do
+    if [ -z "${!var}" ]
+    then
+        bail "$var is not defined as an environment variable\n"
+    fi
+  done
+}
+
 run() {
     local dry_run=$1
     shift
@@ -64,9 +74,16 @@ while getopts ":cdhkD" opt; do
     esac
 done
 
-env=
+check_env_variables DOCKER_VOLUMES
+
 parent_dir=$(dirname "$(readlink -f "$0")")
-env_file=${DOCKER_VOLUMES}/$(basename "$parent_dir")/.env
+readonly docker_root=$DOCKER_VOLUMES/$(basename "$parent_dir")
+if [ ! -d $docker_root ]; then
+    bail "$docker_root is not a directory\n"
+fi
+
+env="DOCKER_ROOT=$docker_root "
+env_file=$docker_root/.env
 if [ -f $env_file ]; then
     while IFS='=' read -r key val
     do
@@ -76,6 +93,13 @@ if [ -f $env_file ]; then
         fi
     done < "$env_file"
 fi
+
+declare sync="rsync -rlic"
+if [ "$dry_run" -eq 1 ]; then
+    sync+="n"
+fi
+eval "$sync ghost/content/ $docker_root/content"
+
 if [[ -z "$keep_old" ]]; then
     run $dry_run "docker-compose rm -fs" 
 fi
