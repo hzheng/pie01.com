@@ -98,7 +98,7 @@ declare sync="rsync -rlic"
 if [ "$dry_run" -eq 1 ]; then
     sync+="n"
 fi
-eval "$sync ghost/content/ $docker_root/content"
+eval "$sync --exclude .git ghost/content/ $docker_root/content"
 
 if [[ -z "$keep_old" ]]; then
     run $dry_run "docker-compose rm -fs" 

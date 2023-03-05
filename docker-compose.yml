@@ -7,11 +7,13 @@ services:
     hostname: ghost-nginx
     ports:
       - ${NGINX_PORT:-443}:443
-    restart: always
+      - 80:80
+    restart: unless-stopped
     depends_on:
       - ghost
     volumes:
       - nginx-certs:/etc/nginx/certs:ro
+      - letsencrypt:/etc/letsencrypt:ro
       - $PWD/nginx/nginx.conf:/etc/nginx/nginx.conf:z
       - $PWD/nginx/conf/ghost.conf:/etc/nginx/conf.d/ghost.conf:z
     networks:
@@ -120,6 +122,14 @@ volumes:
       type: none
       o: bind
       device: ${DOCKER_ROOT}/certs
+
+  letsencrypt:
+    name: pie01_letsencrypt
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_ROOT}/letsencrypt
 
   ghost-content:
     name: pie01_content
