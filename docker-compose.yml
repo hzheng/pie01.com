@@ -98,7 +98,7 @@ services:
     hostname: rsyslog 
     restart: always
     volumes: 
-      - rsyslog_home:/var/log
+      - rsyslog-home:/var/log
     networks:
       - rsyslog-network
     ports: 
@@ -109,47 +109,64 @@ services:
     environment:
       - TZ=${TIME_ZONE}
 
-  commento:
-    image: registry.gitlab.com/commento/commento:latest
-    container_name: pie01_commento
-    hostname: commento
+  remark:
+    image: umputun/remark42:latest
+    container_name: pie01_remark42
+    hostname: remark42
     restart: always
-    environment:
-      # - COMMENTO_SMTP_HOST=smtp.example.com
-      # - COMMENTO_SMTP_PORT=587
-      # - COMMENTO_SMTP_USERNAME=user@example.com
-      # - COMMENTO_SMTP_PASSWORD=password
-      # - COMMENTO_SITE_URL=https://example.com
-      # - COMMENTO_SITE_NAME=My Commento Site
-      # - COMMENTO_POSTGRES_HOST=postgres
-      # - COMMENTO_POSTGRES_USER=commento
-      # - COMMENTO_POSTGRES_PASSWORD=commento
-      # - COMMENTO_POSTGRES_DB=commento
-      # - COMMENTO_ALLOW_NESTED=1
-      - COMMENTO_ORIGIN=https://comment.pie01.com
-      - COMMENTO_PORT=8080
-      - COMMENTO_POSTGRES=postgres://postgres:postgres@commento-db:5432/commento?sslmode=disable
-    depends_on:
-      - commento-db
-    networks:
-      - main-network
-      - db-network
-      - postfix-network
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
     ports:
       - "8080:8080"
 
-  commento-db:
-    image: postgres:13
-    container_name: pie01_postgres
-    restart: always
     environment:
-      - POSTGRES_DB=commento
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - REMARK_URL=$REMARK_URL
+      - SITE=$REMARK_SITE
+      - SECRET=$REMARK_SECRET
+      - STORE_BOLT_PATH=/srv/var/db
+      - BACKUP_PATH=/srv/var/backup
+      - DEBUG=true
+      - AUTH_ANON=true
+      - AUTH_GOOGLE_CID=$REMARK_GOOGLE_CID
+      - AUTH_GOOGLE_CSEC=$REMARK_GOOGLE_CSEC
+      - AUTH_GITHUB_CID=$REMARK_GITHUB_CID
+      - AUTH_GITHUB_CSEC=$REMARK_GITHUB_CSEC
+      - AUTH_FACEBOOK_CID=$REMARK_FACEBOOK_CID
+      - AUTH_FACEBOOK_CSEC=$REMARK_FACEBOOK_CSEC
+      - AUTH_TELEGRAM=true
+      - TELEGRAM_TOKEN=$REMARK_TELEGRAM_TOKEN
+      # - AUTH_DISQUS_CID=
+      # - AUTH_DISQUS_CSEC=
+      # - AUTH_YANDEX_CID=
+      # - AUTH_YANDEX_CSEC=
+      # - NOTIFY_TYPE=telegram
+      # - NOTIFY_QUEUE=100
+      # - NOTIFY_TELEGRAM_TOKEN=
+      # - NOTIFY_TELEGRAM_CHAN=
+      # - NOTIFY_TELEGRAM_TIMEOUT=5s
+      # - ADMIN_SHARED_ID=
+      # - AUTH_EMAIL_ENABLE=true
+      # - AUTH_EMAIL_HOST=postfix
+      # - AUTH_EMAIL_PORT=25
+      # - AUTH_EMAIL_FROM=
+      # - AUTH_EMAIL_SUBJ=remark42 confirmation
+      # - AUTH_EMAIL_CONTENT_TYPE=text/html
+      # - AUTH_EMAIL_TLS=true
+      # - AUTH_EMAIL_USER=
+      # - AUTH_EMAIL_PASSWD=
+      # - AUTH_EMAIL_TIMEOUT=10s
+      # Enable it only for the initial comment import or for manual backups
+      # - ADMIN_PASSWD=<your secret password>
     volumes:
-      - commento-postgres:/var/lib/postgresql/data
+      - remark42:/srv/var
     networks:
-      - db-network
+      - main-network
+      - postfix-network
 
 volumes:
   ghost-mysql:
@@ -159,13 +176,6 @@ volumes:
       type: none
       o: bind
       device: ${DOCKER_ROOT}/mysql
-  commento-postgres:
-    name: pie01_commento_db
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: ${DOCKER_ROOT}/postgres
 
   nginx-certs:
     name: pie01_certs
@@ -191,13 +201,21 @@ volumes:
       o: bind
       device: ${DOCKER_ROOT}/content
 
-  rsyslog_home:
-    name: rsyslog_home
+  rsyslog-home:
+    name: pie01_rsyslog
     driver: local
     driver_opts:
       type: none
       o: bind
       device: ${DOCKER_ROOT}/rsyslog
+
+  remark42:
+    name: pie01_remark42
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_ROOT}/remark42
 
 networks:
   main-network:
