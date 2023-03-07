@@ -30,11 +30,12 @@ install_certbot() {
         sudo apt-get update
         sudo apt-get install -y certbot python3-certbot-nginx
     fi
-    sudo certbot certonly --standalone -d $1 -d www.$1
+    declare domain=${1-$(hostname)}
+    echo sudo certbot certonly -v --standalone -d $domain -d www.$domain -d comment.$domain
 }
 
-if [ $# -lt 1 ]; then
+if [ $# -lt 0 ]; then
     usage "Too few arguments\n"
 fi
 
-install_certbot $1
+install_certbot $@

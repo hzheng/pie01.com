@@ -2,7 +2,9 @@ version: '3.9'
 
 services:
   nginx:
-    image: nginx:latest
+    build:
+      context: nginx
+    image: nginx:custom
     container_name: pie01_nginx
     hostname: ghost-nginx
     ports:
@@ -14,8 +16,6 @@ services:
     volumes:
       - nginx-certs:/etc/nginx/certs:ro
       - letsencrypt:/etc/letsencrypt:ro
-      - $PWD/nginx/nginx.conf:/etc/nginx/nginx.conf:z
-      - $PWD/nginx/conf/ghost.conf:/etc/nginx/conf.d/ghost.conf:z
     networks:
       - main-network
 
@@ -109,6 +109,48 @@ services:
     environment:
       - TZ=${TIME_ZONE}
 
+  commento:
+    image: registry.gitlab.com/commento/commento:latest
+    container_name: pie01_commento
+    hostname: commento
+    restart: always
+    environment:
+      # - COMMENTO_SMTP_HOST=smtp.example.com
+      # - COMMENTO_SMTP_PORT=587
+      # - COMMENTO_SMTP_USERNAME=user@example.com
+      # - COMMENTO_SMTP_PASSWORD=password
+      # - COMMENTO_SITE_URL=https://example.com
+      # - COMMENTO_SITE_NAME=My Commento Site
+      # - COMMENTO_POSTGRES_HOST=postgres
+      # - COMMENTO_POSTGRES_USER=commento
+      # - COMMENTO_POSTGRES_PASSWORD=commento
+      # - COMMENTO_POSTGRES_DB=commento
+      # - COMMENTO_ALLOW_NESTED=1
+      - COMMENTO_ORIGIN=https://comment.pie01.com
+      - COMMENTO_PORT=8080
+      - COMMENTO_POSTGRES=postgres://postgres:postgres@commento-db:5432/commento?sslmode=disable
+    depends_on:
+      - commento-db
+    networks:
+      - main-network
+      - db-network
+      - postfix-network
+    ports:
+      - "8080:8080"
+
+  commento-db:
+    image: postgres:13
+    container_name: pie01_postgres
+    restart: always
+    environment:
+      - POSTGRES_DB=commento
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - commento-postgres:/var/lib/postgresql/data
+    networks:
+      - db-network
+
 volumes:
   ghost-mysql:
     name: pie01_db
@@ -117,6 +159,13 @@ volumes:
       type: none
       o: bind
       device: ${DOCKER_ROOT}/mysql
+  commento-postgres:
+    name: pie01_commento_db
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_ROOT}/postgres
 
   nginx-certs:
     name: pie01_certs
