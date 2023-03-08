@@ -7,7 +7,7 @@ function add_config_value() {
   [ "${value}" == "" ] && echo "ERROR: No value set !!" && exit 1
 
   echo "Set configuration option key=${key} with value=${value}"
- postconf -e "${key} = ${value}"
+  postconf -e "${key} = ${value}"
 }
 
 [ -z "${SMTP_SERVER}" ] && echo "SMTP_SERVER is not set" && exit 1
@@ -38,6 +38,8 @@ if [ "${SMTP_PORT}" = "465" ]; then
 else
   add_config_value "smtp_tls_security_level" "may"
 fi
+
+add_config_value "smtpd_sasl_auth_enable" "yes"
 
 # Bind to both IPv4 and IPv4
 add_config_value "inet_protocols" "all"

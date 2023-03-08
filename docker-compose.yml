@@ -37,7 +37,8 @@ services:
       - database__connection__database=ghost
       - database__connection__charset=utf8mb4
       - mail__options__host=postfix
-      - mail__options__port=25
+      - mail__options__secure=true
+      - mail__options__port=${POSTFIX_INNER_PORT}
     #ports:
     #  - "2368:2368"
     volumes:
@@ -86,7 +87,7 @@ services:
         syslog-format: "${RSYSLOG_FORMAT}"
         tag: "{{.Name}}/{{.ID}}"
     ports:
-       - "${POSTFIX_PORT}:25"
+       - "${POSTFIX_PORT}:${POSTFIX_INNER_PORT}"
     cap_add:
       - SYSLOG
   
@@ -140,26 +141,27 @@ services:
       - AUTH_FACEBOOK_CSEC=$REMARK_FACEBOOK_CSEC
       - AUTH_TELEGRAM=true
       - TELEGRAM_TOKEN=$REMARK_TELEGRAM_TOKEN
-      # - AUTH_DISQUS_CID=
-      # - AUTH_DISQUS_CSEC=
-      # - AUTH_YANDEX_CID=
-      # - AUTH_YANDEX_CSEC=
-      # - NOTIFY_TYPE=telegram
-      # - NOTIFY_QUEUE=100
-      # - NOTIFY_TELEGRAM_TOKEN=
-      # - NOTIFY_TELEGRAM_CHAN=
-      # - NOTIFY_TELEGRAM_TIMEOUT=5s
-      # - ADMIN_SHARED_ID=
-      # - AUTH_EMAIL_ENABLE=true
-      # - AUTH_EMAIL_HOST=postfix
-      # - AUTH_EMAIL_PORT=25
-      # - AUTH_EMAIL_FROM=
-      # - AUTH_EMAIL_SUBJ=remark42 confirmation
-      # - AUTH_EMAIL_CONTENT_TYPE=text/html
-      # - AUTH_EMAIL_TLS=true
-      # - AUTH_EMAIL_USER=
-      # - AUTH_EMAIL_PASSWD=
-      # - AUTH_EMAIL_TIMEOUT=10s
+      - TELEGRAM_TIMEOUT=5s
+      - NOTIFY_TELEGRAM_CHAN=
+      - AUTH_EMAIL_ENABLE=true
+      - AUTH_EMAIL_FROM=$REMARK_EMAIL_FROM
+      - AUTH_EMAIL_SUBJ=$REMARK_AUTH_SUBJ
+      - AUTH_EMAIL_CONTENT_TYPE=text/html
+      - ADMIN_SHARED_EMAIL=$REMARK_EMAIL_FROM
+      - NOTIFY_USERS=email
+      - NOTIFY_EMAIL_FROM=$REMARK_EMAIL_FROM
+      - NOTIFY_EMAIL_VERIFICATION_SUBJ=Email verification
+      - NOTIFY_ADMINS=email
+      - NOTIFY_QUEUE=100
+      - ADMIN_SHARED_ID=$REMARK_ADMIN
+      - SMTP_HOST=postfix
+      - SMTP_PORT=${POSTFIX_INNER_PORT}
+      # - AUTH_SAME_SITE=none
+      # DON'T set SMTP username/password
+      # - SMTP_USERNAME=$SMTP_USERNAME
+      # - SMTP_PASSWORD=$SMTP_PASSWORD
+      # - SMTP_TLS=true
+      - SMTP_TIMEOUT=20s
       # Enable it only for the initial comment import or for manual backups
       # - ADMIN_PASSWD=<your secret password>
     volumes:
