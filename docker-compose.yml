@@ -63,6 +63,63 @@ services:
       - ghost-mysql:/var/lib/mysql
     networks:
       - db-network
+    
+  # mail:
+  #   image: bytemark/smtp
+  #   restart: always
+
+  plausible-db:
+    image: postgres:14-alpine
+    container_name: pie01_plausible_db
+    hostname: plausible-db
+    restart: always
+    volumes:
+      - plausible-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=$PLAUSIBLE_DB_PASSWORD
+    networks:
+      - main-network
+
+  plausible-event-db:
+    image: clickhouse/clickhouse-server:22.6-alpine
+    container_name: pie01_plausible_event_db
+    hostname: plausible-event-db
+    restart: always
+    volumes:
+      - plausible-event-data:/var/lib/clickhouse
+      - $PWD/plausible/clickhouse-config.xml:/etc/clickhouse-server/config.d/logging.xml:ro
+      - $PWD/plausible/clickhouse-user-config.xml:/etc/clickhouse-server/users.d/logging.xml:ro
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - main-network
+
+  plausible:
+    image: plausible/analytics:latest
+    container_name: pie01_plausible
+    hostname: plausible
+    restart: always
+    command: sh -c "sleep 10 && /entrypoint.sh db createdb && /entrypoint.sh db migrate && /entrypoint.sh run"
+    depends_on:
+      - plausible-db
+      - plausible-event-db
+      # - mail
+    ports:
+      - 8000:8000
+    environment:
+      - BASE_URL=$PLAUSIBLE_BASE_URL
+      - DATABASE_URL=postgres://postgres:${PLAUSIBLE_DB_PASSWORD}@plausible-db:5432/plausible
+      - CLICKHOUSE_DATABASE_URL=http://plausible-event-db:8123/plausible
+      - SECRET_KEY_BASE=$PLAUSIBLE_SECRET
+      - ADMIN_USER_EMAIL=$PLAUSIBLE_ADMIN_EMAIL
+      - ADMIN_USER_NAME=$PLAUSIBLE_ADMIN_USER
+      - ADMIN_USER_PWD=$PLAUSIBLE_ADMIN_PWD
+      - CLICKHOUSE_DATABASE_USER=$CLICKHOUSE_DB_USER
+      - CLICKHOUSE_DATABASE_PASSWORD=$CLICKHOUSE_DB_PASSWORD
+    networks:
+      - main-network
   
   postfix:
     build:
@@ -218,6 +275,22 @@ volumes:
       type: none
       o: bind
       device: ${DOCKER_ROOT}/remark42
+  
+  plausible-data:
+    name: pie01_plausible_db
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_ROOT}/plausible/postgres
+  
+  plausible-event-data:
+    name: pie01_plausible_event_db
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${DOCKER_ROOT}/plausible/clickhouse
 
 networks:
   main-network:

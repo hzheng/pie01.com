@@ -85,9 +85,13 @@ fi
 env="DOCKER_ROOT=$docker_root "
 env_file=$docker_root/.env
 if [ -f $env_file ]; then
-    while IFS='=' read -r key val
+    while read -r line
     do
-        if [[ $key != \#* ]]; then # ignore those values starting with #
+        if [[ $line != \#* ]]; then # ignore those values starting with #
+            key="${line%%=*}"
+            [ -z "$key" ] && continue
+            val="${line#"$key"}"
+            val="${val#*=}"
             key=$(echo $key | tr '.' '_')
             env+="${key%% *}=$val "
         fi

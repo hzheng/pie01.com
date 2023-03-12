@@ -31,7 +31,7 @@ install_certbot() {
         sudo apt-get install -y certbot python3-certbot-nginx
     fi
     declare domain=${1-$(hostname)}
-    echo sudo certbot certonly -v --standalone -d $domain -d www.$domain -d comment.$domain
+    sudo certbot certonly -v --standalone -d $domain -d www.$domain -d comment.$domain -d analytic.$domain
 }
 
 if [ $# -lt 0 ]; then
